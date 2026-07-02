@@ -25,7 +25,8 @@ EPISODE_LOOKBACK_FOR_RETRIEVAL = 50  # cap reads per run to control cost/latency
 def get_client() -> firestore.Client:
     # Expects GOOGLE_APPLICATION_CREDENTIALS env var pointing at a service
     # account key file (written from a GitHub Actions secret at runtime).
-    return firestore.Client()
+    return firestore.Client(database="mnemosyne")
+
 
 
 class Memory:
