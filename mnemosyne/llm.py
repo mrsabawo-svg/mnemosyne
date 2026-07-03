@@ -13,7 +13,8 @@ import time
 
 import google.generativeai as genai
 
-MODEL_NAME = "gemini-flash-latest"
+MODEL_NAME = "gemini-2.5-flash-lite"
+
 MAX_QUOTA_RETRIES = 4
 INITIAL_BACKOFF_SECONDS = 5
 
