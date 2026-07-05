@@ -2,40 +2,44 @@
 Thin wrapper around Gemini Flash. Kept separate so swapping models later
 touches one file, not the whole codebase.
 
-Includes retry-with-backoff on 429/quota errors, since the free tier caps
-gemini-flash at 5 requests/minute and a single Mnemosyne pass can easily
-use 4-6 calls (planner + N steps + reflection).
+Migrated to the `google.genai` package (the old `google.generativeai`
+package is deprecated). Includes retry-with-backoff on 429/quota errors.
 """
 from __future__ import annotations
 import json
 import os
 import time
 
-import google.generativeai as genai
+from google import genai
 
 MODEL_NAME = "gemini-2.5-flash-lite"
-
 MAX_QUOTA_RETRIES = 4
 INITIAL_BACKOFF_SECONDS = 5
 
+_client: genai.Client | None = None
 
-def _configure() -> None:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY env var not set")
-    genai.configure(api_key=api_key)
+
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY env var not set")
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 
 def generate(prompt: str, expect_json: bool = False) -> str:
-    _configure()
-    model = genai.GenerativeModel(MODEL_NAME)
+    client = _get_client()
 
     delay = INITIAL_BACKOFF_SECONDS
     last_error: Exception | None = None
 
     for attempt in range(MAX_QUOTA_RETRIES + 1):
         try:
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=MODEL_NAME, contents=prompt
+            )
             text = response.text.strip()
             if expect_json:
                 text = _strip_code_fences(text)
