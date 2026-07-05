@@ -99,8 +99,11 @@ class EvalRecord:
     user_interventions: int
     duration_seconds: float
     notes: str = ""
+    quality_score: Optional[float] = None  # 1-5, set later via mnemosyne.rate
+    quality_comment: str = ""
     timestamp: str = field(default_factory=now_iso)
     schema_version: int = SCHEMA_VERSION
+
 
 
 @dataclass
