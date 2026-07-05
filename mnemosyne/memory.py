@@ -15,18 +15,19 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from google.cloud import firestore
+from google.cloud.firestore import FieldFilter
 
 from .models import Episode, Goal, Reflection, to_dict
 
 WORKING_MEMORY_SIZE = 5
 EPISODE_LOOKBACK_FOR_RETRIEVAL = 50  # cap reads per run to control cost/latency
+DATABASE_NAME = "mnemosyne"
 
 
 def get_client() -> firestore.Client:
     # Expects GOOGLE_APPLICATION_CREDENTIALS env var pointing at a service
     # account key file (written from a GitHub Actions secret at runtime).
-    return firestore.Client(database="mnemosyne")
-
+    return firestore.Client(database=DATABASE_NAME)
 
 
 class Memory:
@@ -120,7 +121,9 @@ class Memory:
 
     def active_goals(self) -> list[dict]:
         docs = (
-            self.db.collection("goals").where("status", "==", "active").stream()
+            self.db.collection("goals")
+            .where(filter=FieldFilter("status", "==", "active"))
+            .stream()
         )
         return [d.to_dict() for d in docs]
 
